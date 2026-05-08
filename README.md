@@ -7,6 +7,17 @@ Single-file Python tool to harvest publications from
 Targets one gemeente or every gemeente; bound by year/date and document type.
 Stdlib only, Python 3.10+.
 
+### Scope
+
+The tool only queries `c.product-area=="officielepublicaties"` — i.e. formal
+publications under the Bekendmakingswet (gemeenteblad, provinciaal blad,
+waterschapsblad, staatscourant, tractatenblad, …).
+
+**Gemeentelijke vergaderstukken (raadsstukken, agenda's, notulen) are out of
+scope** — they aren't in `repository.overheid.nl/sru/` at all. They live in
+each gemeente's own raadsinformatiesysteem and are aggregated separately by
+[openraadsinformatie.nl](https://openraadsinformatie.nl/).
+
 ## Quick start
 
 ```bash
@@ -56,8 +67,16 @@ The full canonical list is in the manual's bijlage. To see the actual rubrieken
 *and counts* for any scope, ask SRU directly with `facetLimit=100:dt.type`:
 
 ```bash
-curl -s 'https://repository.overheid.nl/sru/?query=c.product-area=="officielepublicaties" AND dt.creator=="Aa en Hunze"&maximumRecords=0&facetLimit=100:dt.type' | xmllint --format -
+curl -sG 'https://repository.overheid.nl/sru/' \
+    --data-urlencode 'query=c.product-area=="officielepublicaties" AND dt.creator=="Aa en Hunze"' \
+    --data-urlencode 'maximumRecords=0' \
+    --data-urlencode 'facetLimit=100:dt.type' | xmllint --format -
 ```
+
+(Use `-G` with `--data-urlencode` so each parameter is encoded separately. A
+single shell-quoted URL with raw `&` and unencoded spaces is parsed by KOOP as
+one giant CQL value and rejected with an `info:srw/diagnostic/1/10` "mismatched
+input" diagnostic.)
 
 For reference, the share of common rubrieken across **all gemeenten in 2025**:
 
