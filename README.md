@@ -106,9 +106,13 @@ python3 download_oo.py gm1680 \
     --from 2024-01-01 --to 2024-06-30 \
     --type "beleidsregel"
 
-# Policy documents across every gemeente, 2025 (metadata-only required)
+# Policy-document metadata across every gemeente, 2025
 python3 download_oo.py --all-gemeenten --year 2025 --metadata-only \
     --type "beleidsregel,algemeen verbindend voorschrift (verordening),delegatie- of mandaatbesluit"
+
+# Same scope but with PDFs (allowed because --type narrows the volume)
+python3 download_oo.py --all-gemeenten --year 2025 \
+    --type "beleidsregel"
 
 # Drop the noisy permit traffic
 python3 download_oo.py gm1680 --year 2025 \
@@ -119,7 +123,7 @@ python3 download_oo.py gm1680 --year 2025 \
 
 | Flag | Purpose |
 |---|---|
-| `--all-gemeenten` | harvest every gemeente (`w.organisatietype=="gemeente"`). Requires `--metadata-only`. |
+| `--all-gemeenten` | harvest every gemeente (`w.organisatietype=="gemeente"`). PDFs only allowed alongside `--type` (whitelist); otherwise pass `--metadata-only`. |
 | `--out PATH` | output directory. Default `./out/<gm_code>` or `./out/all-gemeenten`. |
 | `--metadata-only` | write JSON only; `manifestations.pdf` in the JSON still points to the canonical PDF URL. |
 | `--year YYYY` | shortcut for `--from YYYY-01-01 --to YYYY-12-31`. |

@@ -19,6 +19,11 @@ Usage:
     python download_oo.py --all-gemeenten --year 2025 --metadata-only
                                                           # all 342 gemeenten, 2025
                                                           # (~560k records, metadata only)
+    python download_oo.py --all-gemeenten --year 2025 --type "beleidsregel"
+                                                          # PDFs across all gemeenten, but
+                                                          # narrowed by documentsoort
+                                                          # (--type required when not
+                                                          #  --metadata-only)
 
 Date filter uses dt.modified (matches the gemeente example in the SRU 2.0 manual).
 """
@@ -195,7 +200,9 @@ def main() -> int:
                    help="TOOI gemeente code, e.g. gm1680. Omit when using --all-gemeenten.")
     p.add_argument("--all-gemeenten", action="store_true",
                    help="harvest publications from every gemeente (w.organisatietype==\"gemeente\"). "
-                        "Requires --metadata-only; use --year/--from/--to to bound the volume.")
+                        "PDFs only allowed in combination with --type (whitelist) to keep the "
+                        "volume sane; otherwise pass --metadata-only. Use --year/--from/--to to "
+                        "further bound the volume.")
     p.add_argument("--out", default=None,
                    help="output directory (default: ./out/<gm_code> or ./out/all-gemeenten)")
     p.add_argument("--metadata-only", action="store_true",
@@ -231,10 +238,12 @@ def main() -> int:
     if args.gm_code and (not args.gm_code.startswith("gm") or not args.gm_code[2:].isdigit()):
         print(f"error: gm_code must look like gm1680, got {args.gm_code!r}", file=sys.stderr)
         return 2
-    if args.all_gemeenten and not args.metadata_only:
-        print("error: --all-gemeenten requires --metadata-only "
-              "(downloading PDFs across every gemeente would be terabytes; "
-              "use the JSON's manifestations.pdf URLs to fetch selectively).",
+    if args.all_gemeenten and not args.metadata_only and not args.types:
+        print("error: --all-gemeenten without --metadata-only requires --type "
+              "to narrow the documentsoort (an unfiltered PDF harvest across "
+              "every gemeente is terabytes). Either add --metadata-only, or "
+              "restrict with e.g. --type \"beleidsregel\". --exclude-type alone "
+              "does not qualify — most rubrieken are still large.",
               file=sys.stderr)
         return 2
     if args.all_gemeenten and args.expand:
@@ -268,6 +277,11 @@ def main() -> int:
         out_dir = args.out or os.path.join("out", "all-gemeenten")
         bare = None
         print(f"scope: all gemeenten (w.organisatietype==\"gemeente\")")
+        if not args.metadata_only:
+            print(f"warning: downloading PDFs across all gemeenten "
+                  f"for type(s)={args.types}. Per-rubriek volume varies wildly "
+                  f"(e.g. omgevingsvergunning ≈ 57% of all records). Consider "
+                  f"--max-docs N for a smoke test first.", file=sys.stderr)
     else:
         out_dir = args.out or os.path.join("out", args.gm_code)
         bare, full = resolve_gemeente(args.gm_code)
